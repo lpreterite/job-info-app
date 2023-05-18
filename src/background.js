@@ -1,6 +1,8 @@
 'use strict'
 
-import { app, protocol, BrowserWindow } from 'electron'
+import path from "path"
+
+import { app, protocol, BrowserWindow, ipcMain } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 const isDevelopment = process.env.NODE_ENV !== 'production'
@@ -15,7 +17,10 @@ async function createWindow() {
   const win = new BrowserWindow({
     width: 800,
     height: 600,
+    titleBarStyle: 'hidden',
+    frame: false,
     webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
       
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
@@ -33,6 +38,28 @@ async function createWindow() {
     // Load the index.html when not in development
     win.loadURL('app://./index.html')
   }
+
+  /* 当ipcMain接收到以下三个类型为名称的事件时，就会对主进程窗口进行相应的操作 */
+  // 窗口最小化
+  ipcMain.on('min',() => {
+    win.minimize();
+  })
+  // 窗口最大化
+  ipcMain.on('max', () => {
+    if(win.isMaximized()) {
+      win.restore();  
+    } else {
+      win.maximize(); 
+    }
+  })
+  // 关闭窗口
+  ipcMain.on('close', () => {
+    win.close();
+  })
+  // 页面重新加载
+  ipcMain.on('reload',() => {
+    win.reload();
+  })
 }
 
 // Quit when all windows are closed.
